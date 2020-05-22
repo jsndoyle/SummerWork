@@ -9,9 +9,20 @@ struct _node {
 };
 typedef struct _node node;
 
+//Two Way Linked List Node Structure
+struct _nodeAlt {
+    nodeAlt* next;
+    int data;
+    nodeAlt* prev;
+};
+typedef struct _nodeAlt nodeAlt;
+
+//Note: Consider simply making all node structures include a 'prev' but not declare it except when writing methods for two way linked lists.
+//Note: Consider when nodes with 3+ references to other nodes could exist and be functional.
+
 
 /**
- *  CreateNode() function
+ *  CreateNode() functions
  * 
  *  Variable: int datum. Data to store in the created node.
  *  
@@ -24,13 +35,23 @@ typedef struct _node node;
  *  If all nodes were created at once or in a predictable and known pattern, this function would
  *  not be the optimal choice.
  * 
+ *  Equivalent for Doubly Linked Lists is identical.
+ * 
  */
+
 static node* createNode(int datum) {
     node* ret = malloc(sizeof(node));
     ret->data = datum;
+    return ret;
 }
+static nodeAlt* createTwoWayNode(int datum) {
+    nodeAlt* ret = malloc(sizeof(nodeAlt));
+    ret->data = datum;
+    return ret;
+}
+
 /**
- *  insertAtPos() function
+ *  insertAtPos() functions
  * 
  *  Variables:  node* head points to head of Linked List. Assumed not NULL and to contain data.
  *              node* new points to new node to be inserted in list. Assumed not NULL and to contain data.
@@ -46,6 +67,10 @@ static node* createNode(int datum) {
  *  Using this function rather than manually inserting at 0 costs very little relative to 
  * 
  *  Returns head. Always use new head in case of cases that pos = 0.
+ * 
+ *  
+ *  Doubly Linked List comparison:
+ *  Scales better, and fixed cost is similar due to references at start. Needs testing in comparison.
  */
 static node* insertAtPos(node* head, node* new, int pos) {
     node* prev = NULL;
@@ -65,8 +90,27 @@ static node* insertAtPos(node* head, node* new, int pos) {
     }
 }
 
+static nodeAlt* insertAtPosAlt(nodeAlt* head, nodeAlt* new, int pos) {
+    nodeAlt* curr = head;
+    while(pos > 0 && curr->next != NULL) {
+        pos--;
+        curr = curr->next;
+    }
+    if(curr->prev == NULL) {
+        new->next = head;
+        head->prev = new;
+        return new;
+    } else {
+        new->prev = curr->prev;
+        curr->prev->next = new;
+        new->next = curr;
+        curr->prev = new;
+        return head;
+    }
+}
+
 /** 
- *  insertAtPosR() function
+ *  insertAtPosR() functions
  * 
  *  Effectively equivalent to insertAtPos function in every way,
  *  except programmed recursively rather than using a loop.
@@ -78,6 +122,8 @@ static node* insertAtPos(node* head, node* new, int pos) {
  *  This implementation appears, at first glance, to be functionally identical, but is much shorter, 
  *  and relies on much more difficult to follow logic (in my opinion, but that is likely lack
  *  of experience with recursion).
+ *  Upon further inspection, many more references are modified in this. Effectively,
+ *  every reference in the whole list is touched.
  */
 static node* insertAtPosR(node* head, node* new, int pos) {
     if(pos == 0 || head->next == NULL) {
@@ -85,6 +131,20 @@ static node* insertAtPosR(node* head, node* new, int pos) {
         return new;
     } else {
         head->next = insertAtPosR(head->next, new, pos - 1);
+        return head;
+    }
+}
+
+static nodeAlt* insertAtPosAltR(nodeAlt* head, nodeAlt* new, int pos) {
+    if(pos == 0 || head->next == NULL) {
+        new->next = head;
+        head->prev = new;
+        return new;
+    } else {
+        nodeAlt* ref = insertAtPosAltR(head->next, new, pos - 1);
+        head->next = ref;
+        ref->prev = head;//Does this work the way I think it does?
+        return head;
     }
 }
 
