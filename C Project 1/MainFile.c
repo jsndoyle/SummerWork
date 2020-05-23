@@ -22,6 +22,31 @@ typedef struct _nodeAlt nodeAlt;
 
 
 /**
+ *  CreateLinkedList() function
+ * 
+ *  Specifically for Doubly Linked Lists, this type uses a head
+ *  and tail arrangement in which both are remembered and stored
+ *  but do not hold any data themselves.
+ * 
+ *  I'm not sure of the advantages of this type over others, or
+ *  even what to call it to differentiate it. 
+ * 
+ *  Returns head and tail pointers in an array, respectively 0 and 1.
+ * 
+ *      Note: consider using specific values in data to represent head and tail, rather than defining them.
+ *      While this _could_ cause issues and would inevitably cause awful bugs in any code maintained for more
+ *      than a year, it might make a few functions marginally more efficient.
+ */
+
+static nodeAlt* createLinkedList() {
+    nodeAlt* ret = malloc(sizeof(nodeAlt) * 2);
+    ret->next = (ret+1);
+    *(ret+1).prev = ret;
+    return ret;
+}
+
+
+/**
  *  CreateNode() functions
  * 
  *  Variable: int datum. Data to store in the created node.
@@ -72,7 +97,7 @@ static nodeAlt* createTwoWayNode(int datum) {
  *  Doubly Linked List comparison:
  *  Scales better, and fixed cost is similar due to references at start. Needs testing in comparison.
  */
-static node* insertAtPos(node* head, node* new, int pos) {
+static node* insertAtPosAle(node* head, node* new, int pos) {
     node* prev = NULL;
     node* curr = head;
     while(pos > 0 && curr->next != NULL) {
@@ -90,7 +115,7 @@ static node* insertAtPos(node* head, node* new, int pos) {
     }
 }
 
-static nodeAlt* insertAtPosAlt(nodeAlt* head, nodeAlt* new, int pos) {
+static nodeAlt* insertAtPosBet(nodeAlt* head, nodeAlt* new, int pos) {
     nodeAlt* curr = head;
     while(pos > 0 && curr->next != NULL) {
         pos--;
@@ -109,6 +134,20 @@ static nodeAlt* insertAtPosAlt(nodeAlt* head, nodeAlt* new, int pos) {
     }
 }
 
+//A lot cleaner than the other variants
+static nodeAlt* insertAtPosGim(nodeAlt* headTail, nodeAlt* new, int pos) {
+    nodeAlt* curr = headTail;
+    while(pos > 0 && curr->next != headTail+1) {
+        pos--;
+        curr = curr->next;
+    }
+    new->prev = curr->prev;
+    curr->prev->next = new;
+    new->next = curr;
+    curr->prev = new;
+    return headTail;    
+}
+
 /** 
  *  insertAtPosR() functions
  * 
@@ -124,30 +163,54 @@ static nodeAlt* insertAtPosAlt(nodeAlt* head, nodeAlt* new, int pos) {
  *  of experience with recursion).
  *  Upon further inspection, many more references are modified in this. Effectively,
  *  every reference in the whole list is touched.
+ * 
  */
-static node* insertAtPosR(node* head, node* new, int pos) {
+static node* insertAtPosAleR(node* head, node* new, int pos) {
     if(pos == 0 || head->next == NULL) {
         new->next = head;
         return new;
     } else {
-        head->next = insertAtPosR(head->next, new, pos - 1);
+        head->next = insertAtPosAleR(head->next, new, pos - 1);
         return head;
     }
 }
 
-static nodeAlt* insertAtPosAltR(nodeAlt* head, nodeAlt* new, int pos) {
+//There's a lot of ways to write this function that looks pretty similar to me. 
+//Note: come back later to optimize further.
+static nodeAlt* insertAtPosBetR(nodeAlt* head, nodeAlt* new, int pos) {
     if(pos == 0 || head->next == NULL) {
-        new->next = head;
-        head->prev = new;
+        if(head->prev != NULL) {
+            head->prev->next = new;
+            new->prev = head->prev;
+            new->next = head;
+            head->prev = new;
+        } else {
+            new->next = head;
+            head->prev = new;
+        }
         return new;
     } else {
-        nodeAlt* ref = insertAtPosAltR(head->next, new, pos - 1);
-        head->next = ref;
-        ref->prev = head;//Does this work the way I think it does?
-        return head;
+        return insertAtPosBetR(head->next, new, pos - 1)->prev;
     }
 }
 
+//I don't like having a separate helper function (probably not for any good reason), but it looks necessary.
+static int insertAtPosGimRHelper(nodeAlt* headTail, nodeAlt* curr, nodeAlt* new, int pos) {
+    if(pos == 0 || curr->next = headTail+1) {
+        curr->next->prev = new;
+        new->next = curr->next;
+        curr->next = new;
+        new->prev = curr;
+        return 0;
+    } else {
+        insertAtPosGimRHelper(headTail, curr->next, new, pos-1);
+    }
+}
+
+static nodeAlt* insertAtPosGimR(nodeAlt* headTail, nodeAlt* new, int pos) {
+    insertAtPosGimRHelper(headTail, headTail, new, pos);
+    return headTail;
+}
 
 /**
  *  insertInSequence() function
@@ -157,6 +220,7 @@ static nodeAlt* insertAtPosAltR(nodeAlt* head, nodeAlt* new, int pos) {
  * 
  *  Assumes Linked List is in sequence, sort in ascending order.
  *  
+ *  Does not work. Needs to return head, somehow.
  */
 static int insertInSequence(node* head, node* new) {
     while(head->next != NULL && head->next->data < new->data) {
@@ -176,7 +240,6 @@ static int insertInSequence(node* head, node* new) {
  *  NOTE : compare relative efficiency of both functions.
  */
 static int insertInSequenceR(node* head, node* new) {
-    //WIP
     if(head->data < new->data) {
         return insertInSequenceR(head->next, new);
     } else {
