@@ -20,6 +20,10 @@ typedef struct _nodeAlt nodeAlt;
 //Note: Consider simply making all node structures include a 'prev' but not declare it except when writing methods for two way linked lists.
 //Note: Consider when nodes with 3+ references to other nodes could exist and be functional.
 
+//Note: Try hash function into sorted Binary Tree. Compare vs Hash Map. Most efficient use of randomization?
+
+//Note: as is, methods assume given head is not NULL. This is poor design.
+
 
 /**
  *  CreateLinkedList() function
@@ -165,6 +169,7 @@ static nodeAlt* insertAtPosGim(nodeAlt* headTail, nodeAlt* new, int pos) {
  *  every reference in the whole list is touched.
  * 
  */
+
 static node* insertAtPosAleR(node* head, node* new, int pos) {
     if(pos == 0 || head->next == NULL) {
         new->next = head;
@@ -249,6 +254,52 @@ static int insertInSequenceR(node* head, node* new) {
     }
 }
 
+/**
+ * removeFromList() methods.
+ * 
+ * WIP
+ * 
+ * Args: node* head of the list
+ *       int data to remove from list
+ * 
+ * returns new head, whether or not data is successfully removed.
+ * 
+ * Uses free() on just the pointer to the removed node.
+ * Should be enough, but might not be if implementation changes.
+ * 
+ * 
+ * Note: consider returning NULL if data is not found. Although that would be identical to if data is the only item in list.
+ *      Another reason to use head<->tail lists?
+ */
+static node* removeFromList(node* head, int data) {
+    if(head->data == data)  {
+        node* ret = head->next;
+        free(head);
+        return ret;
+    }
+    node* curr = head;
+    node* prev = head;
+    while(curr->next != NULL){
+        if(curr->next->data == data) {
+            prev->next = curr->next;
+            continue;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+    return head;
+}
+
+//Basic diagnostic function
+static int printList(node* head) {
+    int i = 0;
+    while(head != NULL) {
+        printf("%d in List: %d", i, head->data);
+        i++;
+        head = head->next;
+    }
+    return 1;
+}
 
 int main(int argc, char* argv[]) {
     return 0;
